@@ -3,15 +3,58 @@ package com.company;
 import java.sql.*;
 import java.text.DecimalFormat;
 import java.util.ArrayList;
+import java.util.Scanner;
 
 public class Main {
     private static DecimalFormat df = new DecimalFormat("##.##");
+    private static Scanner scanner = new Scanner(System.in);
 
     public static void main(String[] args) {
+        int orderNo = 0;
+        System.out.println("Welcome to our delivery service. Do you want to order something? (Y/N)");
+        String decision = scanner.nextLine();
+        if(decision.equalsIgnoreCase("Y")){
+            orderNo=startNewOrder ();
+        }
+        if(decision.equalsIgnoreCase("N")){
+            System.out.println("Thank you for your visit and good bye");
+            //todo: finish programm
+        }
         //todo: Auswahl Menü anzeigen
         printMenu();
-        //todo: Menüwahl und Zutaten zufügen
+        //Menüwahl und Zutaten zufügen
+        int ok = 0;
+        while (ok != 1) {
+            System.out.println("choose a menu. Enter the number");
+            int menuNo = scanner.nextInt();
+            ok = chooseMenu(orderNo, menuNo);
+        } //todo: Zutaten ändern, weitere Menüs wählen bzw. Menenangaben machen
         //todo: Kundendaten eingeben
+    }
+    private static int startNewOrder () {
+        Connection conn = null;
+        int orderNo = 0;
+        try {
+            String url = "jdbc:mysql://localhost:3306/lieferservice_gastro?user=root";
+            conn = DriverManager.getConnection(url);
+            Statement stmt = conn.createStatement();
+            String command = "INSERT INTO `bestellung`(`ausgeliefert`) VALUES (null)";
+            int ok = stmt.executeUpdate(command);
+            String query = "SELECT Last_INSERT_ID()";
+            ResultSet rs = stmt.executeQuery(query);
+            while (rs.next()){
+                orderNo = rs.getInt("Last_INSERT_ID()");
+                System.out.println(orderNo);
+            }
+            if (ok == 1) {
+                System.out.println("OK! You can place your order now.");
+            } else {
+                System.out.println("There might be a problem. Try again later");
+            }
+        } catch (SQLException ex) {
+            throw new Error("Problem", ex);
+        }
+        return orderNo;
     }
 
     private static void printMenu() {
@@ -52,6 +95,7 @@ public class Main {
             String queryMenu = "SELECT `menü_nr.`, `name`, `preis` FROM `menü` WHERE `menü_nr.` =" + typeId;
             Statement stmtMenu = conn.createStatement();
             ResultSet rsMenu = stmtMenu.executeQuery(queryMenu);
+            //todo: springt nicht in die while-Schleife. Keine Fehlermeldung. Setzt Programm in Methode printType() fort
             while (rsMenu.next()) {
                 int menuNo = rsMenu.getInt("menü_nr.");
                 String menu = rsMenu.getString("name");
@@ -88,5 +132,21 @@ public class Main {
         } catch (SQLException ex) {
             throw new Error("Problem", ex);
         }
+    }
+
+    private static int chooseMenu (int orderNo, int menuNo) {
+        Connection conn = null;
+        int ok = 0;
+        try {
+            String url = "jdbc:mysql://localhost:3306/lieferservice_gastro?user=root";
+            conn = DriverManager.getConnection(url);
+            Statement stmt = conn.createStatement();
+            String command = "INSERT INTO `menü_auswahl`(`bestell_nr`, `menü_nr`, `anzahl`) " +
+                    "VALUES (" + orderNo + "," + menuNo + ", 1)";
+            ok = stmt.executeUpdate(command);
+        } catch (SQLException ex) {
+            throw new Error("Problem", ex);
+        }
+        return ok;
     }
 }
