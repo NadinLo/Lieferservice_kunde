@@ -26,28 +26,26 @@ public class Main {
         int menuNo = 0;
         int id = 0;
         decision = null;
-        while (id == 0) {
-            System.out.println("choose a menu. Enter the number");
-            menuNo = scanner.nextInt();
-            id = chooseMenu(menuNo);
-            if (id == 0) {
-                System.out.println("Something went wrong. Enter again a menu number");
-            }
+        System.out.println("choose a menu. Enter the number");
+        menuNo = scanner.nextInt();
+        id = chooseMenu(orderNo, menuNo);
+        if (id == 0) {
+            System.out.println("Something went wrong. Enter again a menu number");
         }
         System.out.println("Do you want to change ingredients? (Y/N)");
         decision = scanner.next();
         if (decision.equalsIgnoreCase("Y")) {
             printIngredientList();
             ArrayList<Integer> addIngredients = new ArrayList<>();
-            int ingredient = Integer.parseInt(null);
+            int ingredient = 1;
             System.out.println("Enter one after another all ingredients you wanna add to your menu.\n" +
                     "You can also enter ingredients you want to take off of the menu. Therefore you should mark" +
                     "the number with a \"-\". When you're finished enter \"0\".");
             while (ingredient != 0) {
                 ingredient = scanner.nextInt();
-                addIngredients.add(ingredient);
+                addIngredients.add(id, ingredient);
             }
-            addIngredientToMenu(id, addIngredients);
+            addIngredientToMenu(addIngredients);
         }
 
 //todo: Zutaten ändern, weitere Menüs wählen bzw. Menenangaben machen
@@ -156,22 +154,22 @@ public class Main {
         }
     }
 
-    private static int chooseMenu (int menuNo) {
+    private static int chooseMenu (int orderNo, int menuNo) {
         Connection conn = null;
         int id = 0;
+
         try {
             String url = "jdbc:mysql://localhost:3306/lieferservice_gastro?user=root";
             conn = DriverManager.getConnection(url);
             Statement stmt = conn.createStatement();
-            String command = "INSERT INTO `auswahl_details`(`menü_nr`) " +
-                    "VALUES (" + menuNo + ")";
+            String command = "INSERT INTO `menü_auswahl`(`bestell_nr.`, menü_nr`) " +
+                    "VALUES (" + orderNo + ", " + menuNo + ")";
             stmt.executeUpdate(command);
             String query = "SELECT Last_INSERT_ID()";
             ResultSet rs = stmt.executeQuery(query);
             while (rs.next()){
                 id = rs.getInt("Last_INSERT_ID()");
             }
-
         } catch (SQLException ex) {
             throw new Error("Problem", ex);
         }
@@ -214,7 +212,36 @@ public class Main {
         }
     }
 
-    private static void addIngredientToMenu (int id, ArrayList<Integer> ingredients){
+    private static void addIngredientToMenu (int id, ArrayList<Integer> ingredients) {
+        Connection conn = null;
+        try {
+            String url = "jdbc:mysql://localhost:3306/lieferservice_gastro?user=root";
+            conn = DriverManager.getConnection(url);
+            String command = "";
+            for (int ingredient: ingredients) {
+                if (ingredient > 0) {
+                    command = "INSERT INTO `auswahl_details`(`id`, `zutaten_zufügen`)" +
+                            " VALUES (" + id + "," + ingredient + ")";
+                }
+                if (ingredient < 0) {
+                    ingredient = -ingredient;
+                    command = "INSERT INTO `auswahl_details`(`id`, `zutaten_entfernen`)" +
+                            " VALUES (" + id + "," + ingredient + ")";
+                }
+                Statement stmt = conn.createStatement();
+                stmt.executeUpdate(command);
+            }
+        } catch (SQLException ex){
+            throw new Error ("Problem", ex);
+        } finally {
+            try {
+                if (conn != null) {
+                    conn.close();
+                }
+            } catch (SQLException e) {
+                System.out.println(e.getMessage());
+            }
+        }
 
     }
 
