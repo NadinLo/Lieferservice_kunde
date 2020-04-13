@@ -13,22 +13,44 @@ public class Main {
         int orderNo = 0;
         System.out.println("Welcome to our delivery service. Do you want to order something? (Y/N)");
         String decision = scanner.nextLine();
-        if(decision.equalsIgnoreCase("Y")){
-            orderNo=startNewOrder ();
+        if (decision.equalsIgnoreCase("Y")) {
+            orderNo = startNewOrder();
         }
-        if(decision.equalsIgnoreCase("N")){
+        if (decision.equalsIgnoreCase("N")) {
             System.out.println("Thank you for your visit and good bye");
             //todo: finish programm
         }
         //todo: Auswahl Menü anzeigen
         printMenu();
         //Menüwahl und Zutaten zufügen
-        int ok = 0;
-        while (ok != 1) {
+        int menuNo = 0;
+        int id = 0;
+        decision = null;
+        while (id == 0) {
             System.out.println("choose a menu. Enter the number");
-            int menuNo = scanner.nextInt();
-            ok = chooseMenu(orderNo, menuNo);
-        } //todo: Zutaten ändern, weitere Menüs wählen bzw. Menenangaben machen
+            menuNo = scanner.nextInt();
+            id = chooseMenu(menuNo);
+            if (id == 0) {
+                System.out.println("Something went wrong. Enter again a menu number");
+            }
+        }
+        System.out.println("Do you want to change ingredients? (Y/N)");
+        decision = scanner.next();
+        if (decision.equalsIgnoreCase("Y")) {
+            printIngredientList();
+            ArrayList<Integer> addIngredients = new ArrayList<>();
+            int ingredient = Integer.parseInt(null);
+            System.out.println("Enter one after another all ingredients you wanna add to your menu.\n" +
+                    "You can also enter ingredients you want to take off of the menu. Therefore you should mark" +
+                    "the number with a \"-\". When you're finished enter \"0\".");
+            while (ingredient != 0) {
+                ingredient = scanner.nextInt();
+                addIngredients.add(ingredient);
+            }
+            addIngredientToMenu(id, addIngredients);
+        }
+
+//todo: Zutaten ändern, weitere Menüs wählen bzw. Menenangaben machen
         //todo: Kundendaten eingeben
     }
     private static int startNewOrder () {
@@ -134,19 +156,67 @@ public class Main {
         }
     }
 
-    private static int chooseMenu (int orderNo, int menuNo) {
+    private static int chooseMenu (int menuNo) {
         Connection conn = null;
-        int ok = 0;
+        int id = 0;
         try {
             String url = "jdbc:mysql://localhost:3306/lieferservice_gastro?user=root";
             conn = DriverManager.getConnection(url);
             Statement stmt = conn.createStatement();
-            String command = "INSERT INTO `menü_auswahl`(`bestell_nr`, `menü_nr`, `anzahl`) " +
-                    "VALUES (" + orderNo + "," + menuNo + ", 1)";
-            ok = stmt.executeUpdate(command);
+            String command = "INSERT INTO `auswahl_details`(`menü_nr`) " +
+                    "VALUES (" + menuNo + ")";
+            stmt.executeUpdate(command);
+            String query = "SELECT Last_INSERT_ID()";
+            ResultSet rs = stmt.executeQuery(query);
+            while (rs.next()){
+                id = rs.getInt("Last_INSERT_ID()");
+            }
+
         } catch (SQLException ex) {
             throw new Error("Problem", ex);
         }
-        return ok;
+        return id;
     }
+
+    private static void printIngredientList () {
+        Connection conn = null;
+        try {
+            String url = "jdbc:mysql://localhost:3306/lieferservice_gastro?user=root";
+            conn = DriverManager.getConnection(url);
+            String query = "SELECT * FROM `zutaten`";
+            Statement stmt = conn.createStatement();
+            ResultSet rs = stmt.executeQuery(query);
+            System.out.print(
+                    "ALL INGREDIENTS-------------------------\n" +
+                            "id\t| name\t\t\t | is veggi | price\n" +
+                            "----------------------------------------\n");
+            while (rs.next()){
+                int id = rs.getInt("id");
+                String name = rs.getString("name");
+                name = name.concat("               ");
+                name = name.substring(0,15);
+                boolean vegetarian = rs.getBoolean("vegetarisch");
+                double price = rs.getDouble("preis");
+                System.out.println(id + "\t| " + name + "| " + vegetarian + "  \t| " + price);
+            }
+            System.out.println("----------------------------------------\n");
+
+        } catch (SQLException ex) {
+            throw new Error("Problem", ex);
+        } finally {
+            try {
+                if (conn != null) {
+                    conn.close();
+                }
+            } catch (SQLException e) {
+                System.out.println(e.getMessage());
+            }
+        }
+    }
+
+    private static void addIngredientToMenu (int id, ArrayList<Integer> ingredients){
+
+    }
+
+
 }
