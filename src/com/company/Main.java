@@ -63,11 +63,11 @@ public class Main {
                 changeAmount(id, amount);
             }
 
-//weitere Menüs wählen
+//add more menus:
             System.out.println("do you want to add more menus? (Y/N)");
             decision = scannerForString.nextLine();
         }
-        //todo: Kundendaten eingeben
+//enter customer Dates:
         System.out.print("enter the following customer data.");
         System.out.print("\nName: ");
         String customerName = scannerForString.nextLine();
@@ -389,10 +389,24 @@ public class Main {
                         "VALUES (" + orderNo + ", '" + name + "', '" + address + "', " + locationID + ")";
                 stmt = conn.createStatement();
                 stmt.executeUpdate(command);
+                calculateDeliveryArea(orderNo, locationID);
             }
             else {
                 System.out.println("We don't deliver to this area. Sorry.");
             }
+
+        } catch (SQLException ex){
+            throw new Error("Problem", ex);
+        }
+    }
+    
+    private static void calculateDeliveryArea (int orderNo, int locationID){
+        Connection conn = null;
+        try {
+            String url = "jdbc:mysql://localhost:3306/lieferservice_gastro?user=root";
+            conn = DriverManager.getConnection(url);
+            Statement stmt = null;
+            String command = ""; //todo: find query to update the right delivery area
 
         } catch (SQLException ex){
             throw new Error("Problem", ex);
