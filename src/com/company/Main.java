@@ -20,7 +20,7 @@ public class Main {
             System.out.println("Thank you for your visit and good bye");
             //todo: finish programm
         }
-        //todo: Auswahl Menü anzeigen
+        //todo: Auswahl Menü anzeigen: funktioniert noch nicht.
         printMenu();
 
         //Menüwahl und Zutaten zufügen/entfernen
@@ -49,11 +49,14 @@ public class Main {
                 }
             }
             addIngredientToMenu(id, addIngredients);
+            printEditedMenu(id);
         }
         System.out.println("Would you like to change the amount of this menu? (Y/N)");
         decision = scanner.next();
         if (decision.equalsIgnoreCase("Y")) {
-            printEditedMenu(id);
+            System.out.println("How many times you want to order this menu? Just enter the number.");
+            int amount = scanner.nextInt();
+            changeAmount (id, amount);
         }
 
 //todo: weitere Menüs wählen bzw. Menenangaben machen
@@ -234,13 +237,13 @@ public class Main {
             String command = "";
             for (int ingredient : ingredients) {
                 if (ingredient > 0) {
-                    command = "INSERT INTO `auswahl_details`(`id`, `zutaten_hinzuf`)" +
-                            " VALUES (" + id + "," + ingredient + ")";
+                    command = "INSERT INTO `zutaten_hinzuf`(`id_detail_auswahl`, `zutaten_id`) " +
+                            "VALUES (" + id + "," + ingredient + ")";
                 }
-                if (ingredient < 0) {
+                else if (ingredient < 0) {
                     ingredient = -ingredient;
-                    command = "INSERT INTO `auswahl_details`(`id`, `zutaten_entfernen`)" +
-                            " VALUES (" + id + "," + ingredient + ")";
+                    command = "INSERT INTO `zutaten_entfernen`(`id_detail_auswahl`, `zutaten_id`) " +
+                            "VALUES (" + id + "," + ingredient + ")";
                 }
                 Statement stmt = conn.createStatement();
                 stmt.executeUpdate(command);
@@ -261,6 +264,7 @@ public class Main {
 
     private static void printEditedMenu(int id) {
         Connection conn = null;
+        double price = 0;
         try {
             String url = "jdbc:mysql://localhost:3306/lieferservice_gastro?user=root";
             conn = DriverManager.getConnection(url);
@@ -269,47 +273,51 @@ public class Main {
             String query = "SELECT menu_auswahl.menu_nr, menu.name, menu.preis " +
                     "FROM `menu_auswahl` " +
                     "INNER JOIN menu ON menu_auswahl.menu_nr = menu.menu_nr " +
-                    "WHERE menu_auswahl.auswahl_detail_id = " + id;
+                    "WHERE menu_auswahl.id_detail_auswahl = " + id;
             stmt = conn.createStatement();
             ResultSet rs = stmt.executeQuery(query);
             while (rs.next()){
                 int menuNo = rs.getInt("menu_auswahl.menu_nr");
                 String menuName = rs.getString("menu.name");
-                double price = rs.getDouble("menu.preis");
+                price = rs.getDouble("menu.preis");
                 System.out.println(menuNo + ") " + menuName + ": " + df.format(price) + " €");
 
                 query = "SELECT zutaten.name " +
                         "FROM zutatenmix " +
                         "INNER JOIN zutaten ON zutatenmix.zutaten_id = zutaten.id WHERE zutatenmix.menü_id = " + menuNo;
                 rs = stmt.executeQuery(query);
+                System.out.print("\t(");
                 while (rs.next()){
                     String ingredientName = rs.getString("zutaten.name");
                     System.out.print(ingredientName + ", ");
                 }
-                System.out.println();
+                System.out.println(")");
             }
             query = "SELECT zutaten.name, zutaten.preis " +
-                    "FROM `auswahl_details` " +
-                    "INNER JOIN zutaten ON auswahl_details.zutaten_hinzuf = zutaten.id " +
-                    "WHERE auswahl_details.id = " + id + " AND auswahl_details.zutaten_hinzuf != 'null'";
+                    "FROM `zutaten_hinzuf` " +
+                    "INNER JOIN zutaten ON zutaten_hinzuf.zutaten_id = zutaten.id " +
+                    "WHERE id_detail_auswahl = " + id;
             rs = stmt.executeQuery(query);
-            System.out.println("You want to add following ingredients:");
+            System.out.println("With extra:");
             while (rs.next()){
                 String addedIngredient = rs.getString("zutaten.name");
                 double ingrPrice = rs.getDouble("zutaten.preis");
-                System.out.println(addedIngredient + " + " + df.format(ingrPrice) + " €");
+                System.out.println("\t" + addedIngredient + " + " + df.format(ingrPrice) + " €");
+                price = price + ingrPrice;
             }
             query = "SELECT zutaten.name, zutaten.preis " +
-                    "FROM `auswahl_details` " +
-                    "INNER JOIN zutaten ON auswahl_details.zutaten_entfernen = zutaten.id " +
-                    "WHERE auswahl_details.id = " + id + " AND auswahl_details.zutaten_entfernen != 'null'";
+                    "FROM `zutaten_entfernen` " +
+                    "INNER JOIN zutaten ON zutaten_entfernen.zutaten_id = zutaten.id " +
+                    "WHERE id_detail_auswahl = " + id;
             rs = stmt.executeQuery(query);
-            System.out.println("You don't want to take off following ingredients from your menu:");
+            System.out.println("Without: ");
             while (rs.next()){
                 String deletedIngredient = rs.getString("zutaten.name");
                 double ingrPrice = rs.getDouble("zutaten.preis");
-                System.out.println(deletedIngredient + " - " + df.format(ingrPrice) + " €");
+                System.out.println("\t" + deletedIngredient + " - " + df.format(ingrPrice) + " €");
+                price = price - ingrPrice;
             }
+            System.out.println("price in total: " + df.format(price) + "€ ");
 
         } catch (SQLException ex) {
             throw new Error("Problem", ex);
@@ -323,6 +331,21 @@ public class Main {
             } catch (SQLException e) {
                 System.out.println(e.getMessage());
             }
+        }
+    }
+
+    private static void changeAmount (int id, int amount){
+        Connection conn = null;
+        try {
+            String url = "jdbc:mysql://localhost:3306/lieferservice_gastro?user=root";
+            conn = DriverManager.getConnection(url);
+            Statement stmt = null;
+            String command = "UPDATE `menu_auswahl` SET `anzahl`= " + amount + " WHERE `id_detail_auswahl` = " + id;
+            stmt = conn.createStatement();
+            stmt.executeUpdate(command);
+
+        } catch (SQLException ex){
+            throw new Error("Problem", ex);
         }
     }
 
