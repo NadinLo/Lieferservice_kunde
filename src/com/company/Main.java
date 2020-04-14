@@ -7,12 +7,13 @@ import java.util.Scanner;
 
 public class Main {
     private static DecimalFormat df = new DecimalFormat("##.##");
-    private static Scanner scanner = new Scanner(System.in);
+    private static Scanner scannerForInt = new Scanner(System.in);
+    private static Scanner scannerForString = new Scanner(System.in);
 
     public static void main(String[] args) {
         int orderNo = 0;
         System.out.println("Welcome to our delivery service. Do you want to order something? (Y/N)");
-        String decision = scanner.nextLine();
+        String decision = scannerForString.nextLine();
         if (decision.equalsIgnoreCase("Y")) {
             orderNo = startNewOrder();
         }
@@ -29,14 +30,14 @@ public class Main {
             int id = 0;
             decision = null;
             System.out.println("choose a menu. Enter the number");
-            menuNo = scanner.nextInt();
+            menuNo = scannerForInt.nextInt();
             id = chooseMenu(orderNo, menuNo);
             if (id == 0) {
                 System.out.println("Something went wrong. Enter again a menu number");
             }
 //Change ingredients:
             System.out.println("Do you want to change ingredients? (Y/N)");
-            decision = scanner.next();
+            decision = scannerForString.next();
             if (decision.equalsIgnoreCase("Y")) {
                 printIngredientList();
                 ArrayList<Integer> addIngredients = new ArrayList<>();
@@ -45,7 +46,7 @@ public class Main {
                         "You can also enter ingredients you want to take off of the menu. Therefore you should mark" +
                         "the number with a \"-\". When you're finished enter \"0\".");
                 while (ingredient != 0) {
-                    ingredient = scanner.nextInt();
+                    ingredient = scannerForInt.nextInt();
                     if (ingredient != 0) {
                         addIngredients.add(ingredient);
                     }
@@ -55,18 +56,26 @@ public class Main {
             }
 //Change Amount:
             System.out.println("Would you like to change the amount of this menu? (Y/N)");
-            decision = scanner.next();
+            decision = scannerForString.next();
             if (decision.equalsIgnoreCase("Y")) {
                 System.out.println("How many times you want to order this menu? Just enter the number.");
-                int amount = scanner.nextInt();
+                int amount = scannerForInt.nextInt();
                 changeAmount(id, amount);
             }
 
-//todo: weitere Menüs wählen
+//weitere Menüs wählen
             System.out.println("do you want to add more menus? (Y/N)");
-            decision = scanner.next();
+            decision = scannerForString.nextLine();
         }
         //todo: Kundendaten eingeben
+        System.out.print("enter the following customer data.");
+        System.out.print("\nName: ");
+        String customerName = scannerForString.nextLine();
+        System.out.print("\nStreet and number: ");
+        String address = scannerForString.nextLine();
+        System.out.print("\nVillage/ town: ");
+        String location = scannerForString.nextLine();
+        enterCustomerData(orderNo, customerName, address, location);
     }
 
     private static int startNewOrder() {
@@ -349,6 +358,41 @@ public class Main {
             String command = "UPDATE `menu_auswahl` SET `anzahl`= " + amount + " WHERE `id_detail_auswahl` = " + id;
             stmt = conn.createStatement();
             stmt.executeUpdate(command);
+
+        } catch (SQLException ex){
+            throw new Error("Problem", ex);
+        }
+    }
+
+    private static void enterCustomerData(int orderNo, String name, String address, String location){
+        Connection conn = null;
+        try {
+            String url = "jdbc:mysql://localhost:3306/lieferservice_gastro?user=root";
+            conn = DriverManager.getConnection(url);
+            Statement stmt = null;
+            String query = "SELECT id, name FROM belieferte_ortschaften";
+            stmt = conn.createStatement();
+            int locationID = 0;
+            ResultSet rs = stmt.executeQuery(query);
+            while (rs.next()){
+                locationID = rs.getInt("id");
+                String locationName = rs.getString("name");
+                if (!locationName.equalsIgnoreCase(location)){
+                    locationID = 0;
+                }
+                else {
+                    break;
+                }
+            }
+            if (locationID != 0){
+                String command = "INSERT INTO `kunde`(`bestellnr.`, `name`, `straße_hnr.`, `ortschaft`) " +
+                        "VALUES (" + orderNo + ", '" + name + "', '" + address + "', " + locationID + ")";
+                stmt = conn.createStatement();
+                stmt.executeUpdate(command);
+            }
+            else {
+                System.out.println("We don't deliver to this area. Sorry.");
+            }
 
         } catch (SQLException ex){
             throw new Error("Problem", ex);
