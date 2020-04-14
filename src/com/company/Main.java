@@ -20,46 +20,52 @@ public class Main {
             System.out.println("Thank you for your visit and good bye");
             //todo: finish programm
         }
-        //todo: Auswahl Menü anzeigen: funktioniert noch nicht.
-        printMenu();
+        while (decision.equalsIgnoreCase("Y")) {
+            //todo: Auswahl Menü anzeigen: funktioniert noch nicht.
+            printMenu();
 
-        //Menüwahl und Zutaten zufügen/entfernen
-        int menuNo = 0;
-        int id = 0;
-        decision = null;
-        System.out.println("choose a menu. Enter the number");
-        menuNo = scanner.nextInt();
-        id = chooseMenu(orderNo, menuNo);
-        if (id == 0) {
-            System.out.println("Something went wrong. Enter again a menu number");
-        }
-        System.out.println("Do you want to change ingredients? (Y/N)");
-        decision = scanner.next();
-        if (decision.equalsIgnoreCase("Y")) {
-            printIngredientList();
-            ArrayList<Integer> addIngredients = new ArrayList<>();
-            int ingredient = 1;
-            System.out.println("Enter one after another all ingredients you wanna add to your menu.\n" +
-                    "You can also enter ingredients you want to take off of the menu. Therefore you should mark" +
-                    "the number with a \"-\". When you're finished enter \"0\".");
-            while (ingredient != 0) {
-                ingredient = scanner.nextInt();
-                if (ingredient != 0) {
-                    addIngredients.add(ingredient);
-                }
+//Choose menu:
+            int menuNo = 0;
+            int id = 0;
+            decision = null;
+            System.out.println("choose a menu. Enter the number");
+            menuNo = scanner.nextInt();
+            id = chooseMenu(orderNo, menuNo);
+            if (id == 0) {
+                System.out.println("Something went wrong. Enter again a menu number");
             }
-            addIngredientToMenu(id, addIngredients);
-            printEditedMenu(id);
-        }
-        System.out.println("Would you like to change the amount of this menu? (Y/N)");
-        decision = scanner.next();
-        if (decision.equalsIgnoreCase("Y")) {
-            System.out.println("How many times you want to order this menu? Just enter the number.");
-            int amount = scanner.nextInt();
-            changeAmount (id, amount);
-        }
+//Change ingredients:
+            System.out.println("Do you want to change ingredients? (Y/N)");
+            decision = scanner.next();
+            if (decision.equalsIgnoreCase("Y")) {
+                printIngredientList();
+                ArrayList<Integer> addIngredients = new ArrayList<>();
+                int ingredient = 1;
+                System.out.println("Enter one after another all ingredients you wanna add to your menu.\n" +
+                        "You can also enter ingredients you want to take off of the menu. Therefore you should mark" +
+                        "the number with a \"-\". When you're finished enter \"0\".");
+                while (ingredient != 0) {
+                    ingredient = scanner.nextInt();
+                    if (ingredient != 0) {
+                        addIngredients.add(ingredient);
+                    }
+                }
+                addIngredientToMenu(id, addIngredients);
+                printEditedMenu(id);
+            }
+//Change Amount:
+            System.out.println("Would you like to change the amount of this menu? (Y/N)");
+            decision = scanner.next();
+            if (decision.equalsIgnoreCase("Y")) {
+                System.out.println("How many times you want to order this menu? Just enter the number.");
+                int amount = scanner.nextInt();
+                changeAmount(id, amount);
+            }
 
-//todo: weitere Menüs wählen bzw. Menenangaben machen
+//todo: weitere Menüs wählen
+            System.out.println("do you want to add more menus? (Y/N)");
+            decision = scanner.next();
+        }
         //todo: Kundendaten eingeben
     }
 
