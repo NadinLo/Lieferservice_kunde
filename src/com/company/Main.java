@@ -76,6 +76,9 @@ public class Main {
         System.out.print("\nVillage/ town: ");
         String location = scannerForString.nextLine();
         enterCustomerData(orderNo, customerName, address, location);
+
+        // todo: overview order in total
+        overview (orderNo);
     }
 
     private static int startNewOrder() {
@@ -85,7 +88,7 @@ public class Main {
             String url = "jdbc:mysql://localhost:3306/lieferservice_gastro?user=root";
             conn = DriverManager.getConnection(url);
             Statement stmt = conn.createStatement();
-            String command = "INSERT INTO `bestellung`(`ausgeliefert`) VALUES (null)";
+            String command = "INSERT INTO `bestellung`(abgeschlossen) VALUES (0)";
             int ok = stmt.executeUpdate(command);
             String query = "SELECT Last_INSERT_ID()";
             ResultSet rs = stmt.executeQuery(query);
@@ -385,7 +388,7 @@ public class Main {
                 }
             }
             if (locationID != 0){
-                String command = "INSERT INTO `kunde`(`bestellnr.`, `name`, `straße_hnr.`, `ortschaft`) " +
+                String command = "INSERT INTO `kunde`(`bestellnr`, `name`, `straße_hnr`, `ortschaft`) " +
                         "VALUES (" + orderNo + ", '" + name + "', '" + address + "', " + locationID + ")";
                 stmt = conn.createStatement();
                 stmt.executeUpdate(command);
@@ -419,20 +422,52 @@ public class Main {
                     "AND lieferzone.distance_max > " +
                     "(SELECT belieferte_ortschaften.distance " +
                     "FROM belieferte_ortschaften " +
-                    "INNER JOIN kunde ON kunde.ortschaft = belieferte_ortschaften.id WHERE kunde.bestellnr = " + orderNo + ")";
+                    "INNER JOIN kunde ON kunde.ortschaft = belieferte_ortschaften.id WHERE kunde.bestellnr = " + orderNo + "))";
             stmt = conn.createStatement();
             ResultSet rs = stmt.executeQuery(query);
             while (rs.next()){
                 deliveryArea = rs.getInt("lieferzone.id");
                 deliveryFee = rs.getDouble("lieferzone.lieferpreis");
             }
-            System.out.println("Area " + deliveryArea + "\n Price for delivery: " + df.format(deliveryFee) + "€");
+            System.out.println("Area " + deliveryArea + "\nPrice for delivery: " + df.format(deliveryFee) + "€");
 
 
 
         } catch (SQLException ex){
             throw new Error("Problem", ex);
         }
+    }
+
+    private static void overview (int orderNo){
+        System.out.println("YOUR ORDER\t\t\t" + orderNo);
+        Connection conn = null;
+        try {
+            String url= "jdbc:mysql://localhost:3306/lieferservice_gastro?user=root";
+            conn = DriverManager.getConnection(url);
+            Statement stmt = null;
+            //kundendaten
+            String query = "SELECT kunde.name AS 'Kundenname', " +
+                    "kunde.straße_hnr as 'Straße Hausnummer', " +
+                    "belieferte_ortschaften.plz as 'PLZ', " +
+                    "belieferte_ortschaften.name AS 'Ort' " +
+                    "FROM `kunde` " +
+                    "INNER JOIN belieferte_ortschaften ON kunde.ortschaft = belieferte_ortschaften.id " +
+                    "WHERE `bestellnr` = " + orderNo;
+            stmt = conn.createStatement();
+            ResultSet rs = stmt.executeQuery(query);
+            while (rs.next()){
+                String customerName = rs.getString("Kundenname");
+                String address = rs.getString("Straße Hausnummer");
+                String ZIP = "" + rs.getInt("PLZ");
+                String location = rs.getString("Ort");
+            }
+        } catch (SQLException ex){
+            throw new Error("Problem", ex);
+        }
+        //bestellung (menünummer, name, extra Zutaten, Menge, Preis Menü)
+        //SELECT auswahl.bestell_nr AS 'Bestellnummer', auswahl.menu_nr AS 'Menünummer', menu.name as 'Menü', (SELECT menu_gruppe.name From menu INNER JOIN menu_gruppe ON menu.menu_gruppe = menu_gruppe.id WHERE menu.menu_gruppe = (SELECT menu.menu_gruppe FROM menu_auswahl auswahl INNER JOIN menu ON auswahl.menu_nr = menu.menu_nr WHERE auswahl.bestell_nr = 54)) AS 'Gruppe', (SELECT zutaten.name FROM zutaten_hinzuf INNER JOIN zutaten ON zutaten_hinzuf.zutaten_id = zutaten.id WHERE zutaten_hinzuf.id_detail_auswahl = (SELECT auswahl.id_detail_auswahl FROM menu_auswahl auswahl INNER JOIN menu ON auswahl.menu_nr = menu.menu_nr WHERE auswahl.bestell_nr = 54)) AS 'extra Zutaten', menu.preis AS 'Preis', auswahl.anzahl AS 'Menge' FROM menu_auswahl auswahl INNER JOIN menu ON auswahl.menu_nr = menu.menu_nr WHERE auswahl.bestell_nr = 54
+        //Lieferzone, Lieferpreis
+        //gesamtpreis
     }
 
 
