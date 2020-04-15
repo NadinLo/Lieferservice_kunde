@@ -389,7 +389,7 @@ public class Main {
                         "VALUES (" + orderNo + ", '" + name + "', '" + address + "', " + locationID + ")";
                 stmt = conn.createStatement();
                 stmt.executeUpdate(command);
-                calculateDeliveryArea(orderNo, locationID);
+                calculateDeliveryArea(orderNo);
             }
             else {
                 System.out.println("We don't deliver to this area. Sorry.");
@@ -400,13 +400,35 @@ public class Main {
         }
     }
     
-    private static void calculateDeliveryArea (int orderNo, int locationID){
+    private static void calculateDeliveryArea (int orderNo){
         Connection conn = null;
+        double deliveryFee = 0;
+        int deliveryArea = 0;
         try {
             String url = "jdbc:mysql://localhost:3306/lieferservice_gastro?user=root";
             conn = DriverManager.getConnection(url);
             Statement stmt = null;
-            String command = ""; //todo: find query to update the right delivery area
+            String query = "SELECT lieferzone.id, lieferzone.lieferpreis " +
+                    "FROM lieferzone " +
+                    "WHERE lieferzone.id = (SELECT lieferzone.id " +
+                    "FROM lieferzone " +
+                    "WHERE lieferzone.distance_min < " +
+                    "(SELECT belieferte_ortschaften.distance " +
+                    "FROM belieferte_ortschaften " +
+                    "INNER JOIN kunde ON kunde.ortschaft = belieferte_ortschaften.id WHERE kunde.bestellnr = " + orderNo + ") " +
+                    "AND lieferzone.distance_max > " +
+                    "(SELECT belieferte_ortschaften.distance " +
+                    "FROM belieferte_ortschaften " +
+                    "INNER JOIN kunde ON kunde.ortschaft = belieferte_ortschaften.id WHERE kunde.bestellnr = " + orderNo + ")";
+            stmt = conn.createStatement();
+            ResultSet rs = stmt.executeQuery(query);
+            while (rs.next()){
+                deliveryArea = rs.getInt("lieferzone.id");
+                deliveryFee = rs.getDouble("lieferzone.lieferpreis");
+            }
+            System.out.println("Area " + deliveryArea + "\n Price for delivery: " + df.format(deliveryFee) + "€");
+
+
 
         } catch (SQLException ex){
             throw new Error("Problem", ex);
