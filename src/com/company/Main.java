@@ -1,6 +1,5 @@
 package com.company;
 
-import javax.swing.plaf.nimbus.State;
 import java.sql.*;
 import java.text.DecimalFormat;
 import java.util.ArrayList;
@@ -27,9 +26,8 @@ public class Main {
             printMenu();
 
 //Choose menu:
-            int menuNo = 0;
-            int id = 0;
-            decision = null;
+            int menuNo;
+            int id;
             System.out.println("choose a menu. Enter the number");
             menuNo = scannerForInt.nextInt();
             id = chooseMenu(orderNo, menuNo);
@@ -104,7 +102,15 @@ public class Main {
             }
         } catch (SQLException ex) {
             throw new Error("Problem", ex);
+        }  finally {
+        try {
+            if (conn != null) {
+                conn.close();
+            }
+        } catch (SQLException e) {
+            System.out.println(e.getMessage());
         }
+    }
         return orderNo;
     }
 
@@ -116,6 +122,14 @@ public class Main {
             printType();
         } catch (SQLException ex) {
             throw new Error("Problem", ex);
+        } finally {
+            try {
+                if (conn != null) {
+                    conn.close();
+                }
+            } catch (SQLException e) {
+                System.out.println(e.getMessage());
+            }
         }
     }
 
@@ -135,6 +149,14 @@ public class Main {
             }
         } catch (SQLException ex) {
             throw new Error("Problem", ex);
+        } finally {
+            try {
+                if (conn != null) {
+                    conn.close();
+                }
+            } catch (SQLException e) {
+                System.out.println(e.getMessage());
+            }
         }
     }
 
@@ -156,6 +178,14 @@ public class Main {
             }
         } catch (SQLException ex) {
             throw new Error("Problem", ex);
+        } finally {
+            try {
+                if (conn != null) {
+                    conn.close();
+                }
+            } catch (SQLException e) {
+                System.out.println(e.getMessage());
+            }
         }
     }
 
@@ -170,7 +200,7 @@ public class Main {
             Statement stmtIngr = conn.createStatement();
             ResultSet rsIngr = stmtIngr.executeQuery(queryIngr);
             ArrayList<Integer> vegetarian = new ArrayList<>();
-            int veggi = -1;
+            int veggi;
             while (rsIngr.next()) {
                 String ingredient = rsIngr.getString("zutaten.name");
                 veggi = rsIngr.getByte("zutaten.vegetarisch");
@@ -182,32 +212,45 @@ public class Main {
             }
         } catch (SQLException ex) {
             throw new Error("Problem", ex);
+        } finally {
+            try {
+                if (conn != null) {
+                    conn.close();
+                }
+            } catch (SQLException e) {
+                System.out.println(e.getMessage());
+            }
         }
     }
 
     private static int chooseMenu(int orderNo, int menuNo) {
         Connection conn = null;
         int id = 0;
-        int ok = 0;
 
         try {
             String url = "jdbc:mysql://localhost:3306/lieferservice_gastro?user=root";
             conn = DriverManager.getConnection(url);
-            Statement stmt = null;
+            Statement stmt;
             String command = "INSERT INTO `menu_auswahl`(`bestell_nr`, `menu_nr`, anzahl) " +
                     "VALUES (" + orderNo + ", " + menuNo + ", 1)";
 
             stmt = conn.createStatement();
-            ok = stmt.executeUpdate(command);
+            stmt.executeUpdate(command);
             String query = "SELECT Last_INSERT_ID()";
             ResultSet rs = stmt.executeQuery(query);
             while (rs.next()) {
                 id = rs.getInt("Last_INSERT_ID()");
             }
-
-
         } catch (SQLException ex) {
             throw new Error("Problem", ex);
+        } finally {
+            try {
+                if (conn != null) {
+                    conn.close();
+                }
+            } catch (SQLException e) {
+                System.out.println(e.getMessage());
+            }
         }
         return id;
     }
@@ -286,7 +329,7 @@ public class Main {
         try {
             String url = "jdbc:mysql://localhost:3306/lieferservice_gastro?user=root";
             conn = DriverManager.getConnection(url);
-            Statement stmt = null;
+            Statement stmt;
             System.out.println("your chosen menu: ");
             String query = "SELECT menu_auswahl.menu_nr, menu.name, menu.preis " +
                     "FROM `menu_auswahl` " +
@@ -339,8 +382,6 @@ public class Main {
 
         } catch (SQLException ex) {
             throw new Error("Problem", ex);
-
-
         } finally {
             try {
                 if (conn != null) {
@@ -357,13 +398,21 @@ public class Main {
         try {
             String url = "jdbc:mysql://localhost:3306/lieferservice_gastro?user=root";
             conn = DriverManager.getConnection(url);
-            Statement stmt = null;
+            Statement stmt;
             String command = "UPDATE `menu_auswahl` SET `anzahl`= " + amount + " WHERE `id_detail_auswahl` = " + id;
             stmt = conn.createStatement();
             stmt.executeUpdate(command);
 
         } catch (SQLException ex) {
             throw new Error("Problem", ex);
+        } finally {
+            try {
+                if (conn != null) {
+                    conn.close();
+                }
+            } catch (SQLException e) {
+                System.out.println(e.getMessage());
+            }
         }
     }
 
@@ -372,7 +421,7 @@ public class Main {
         try {
             String url = "jdbc:mysql://localhost:3306/lieferservice_gastro?user=root";
             conn = DriverManager.getConnection(url);
-            Statement stmt = null;
+            Statement stmt;
             String query = "SELECT id, name FROM belieferte_ortschaften";
             stmt = conn.createStatement();
             int locationID = 0;
@@ -398,6 +447,14 @@ public class Main {
 
         } catch (SQLException ex) {
             throw new Error("Problem", ex);
+        } finally {
+            try {
+                if (conn != null) {
+                    conn.close();
+                }
+            } catch (SQLException e) {
+                System.out.println(e.getMessage());
+            }
         }
     }
 
@@ -408,7 +465,7 @@ public class Main {
         try {
             String url = "jdbc:mysql://localhost:3306/lieferservice_gastro?user=root";
             conn = DriverManager.getConnection(url);
-            Statement stmt = null;
+            Statement stmt;
             String query = "SELECT lieferzone.id, lieferzone.lieferpreis " +
                     "FROM lieferzone " +
                     "WHERE lieferzone.id = (SELECT lieferzone.id " +
@@ -432,6 +489,14 @@ public class Main {
 
         } catch (SQLException ex) {
             throw new Error("Problem", ex);
+        } finally {
+            try {
+                if (conn != null) {
+                    conn.close();
+                }
+            } catch (SQLException e) {
+                System.out.println(e.getMessage());
+            }
         }
     }
 
@@ -441,8 +506,12 @@ public class Main {
         try {
             String url = "jdbc:mysql://localhost:3306/lieferservice_gastro?user=root";
             conn = DriverManager.getConnection(url);
-            Statement stmt = null;
+            Statement stmt;
 //kundendaten
+            String customerName = null;
+            String address = null;
+            String ZIP = null;
+            String location = null;
             try {
                 String query = "SELECT kunde.name AS 'Kundenname', " +
                         "kunde.straße_hnr as 'Straße Hausnummer', " +
@@ -454,11 +523,12 @@ public class Main {
                 stmt = conn.createStatement();
                 ResultSet rs = stmt.executeQuery(query);
                 while (rs.next()) {
-                    String customerName = rs.getString("Kundenname");
-                    String address = rs.getString("Straße Hausnummer");
-                    String ZIP = "" + rs.getInt("PLZ");
-                    String location = rs.getString("Ort");
+                    customerName = rs.getString("Kundenname");
+                    address = rs.getString("Straße Hausnummer");
+                    ZIP = "" + rs.getInt("PLZ");
+                    location = rs.getString("Ort");
                 }
+                printCustomerData (customerName, address, ZIP, location);
             } catch (SQLException ex) {
                 System.out.println("something went wrong with the customerData");
             }
@@ -470,6 +540,7 @@ public class Main {
                 String query = "SELECT menu_auswahl.id_detail_auswahl " +
                         "FROM menu_auswahl " +
                         "WHERE menu_auswahl.bestell_nr = " + orderNo;
+                stmt = conn.createStatement();
                 ResultSet rs = stmt.executeQuery(query);
                 while (rs.next()) {
                     detailID.add(rs.getInt("menu_auswahl.id_detail_auswahl"));
@@ -477,7 +548,7 @@ public class Main {
             } catch (SQLException ex) {
                 throw new Error("something went wrong with you id_ArrayList", ex);
             }
-            for (int i = 0; i < detailID.size(); i++) {
+            for (Integer integer : detailID) {
                 //Menünummer, Menüname, Gruppen_nr., Menüpreis, Menge
                 int menuNo = 0;
                 String menuName = "";
@@ -492,7 +563,7 @@ public class Main {
                             "menu_auswahl.anzahl " +
                             "FROM menu_auswahl " +
                             "INNER JOIN menu ON menu_auswahl.menu_nr = menu.menu_nr " +
-                            "WHERE menu_auswahl.id_detail_auswahl = " + detailID.get(i);
+                            "WHERE menu_auswahl.id_detail_auswahl = " + integer;
 
                     ResultSet rs = stmt.executeQuery(query);
                     while (rs.next()) {
@@ -515,7 +586,7 @@ public class Main {
                     String query = "SELECT zutaten.name AS 'Zutat', zutaten.preis AS 'Preis' " +
                             "FROM zutaten_hinzuf " +
                             "INNER JOIN zutaten ON zutaten_hinzuf.zutaten_id = zutaten.id " +
-                            "WHERE zutaten_hinzuf.id_detail_auswahl = " + detailID.get(i);
+                            "WHERE zutaten_hinzuf.id_detail_auswahl = " + integer;
                     ResultSet rs = stmt.executeQuery(query);
                     while (rs.next()) {
                         extraIngr.add(rs.getString("Zutat"));
@@ -530,7 +601,7 @@ public class Main {
                     String query = "SELECT zutaten.name, zutaten.preis " +
                             "FROM zutaten_entfernen " +
                             "INNER JOIN zutaten ON zutaten_entfernen.zutaten_id = zutaten.id " +
-                            "WHERE zutaten_entfernen.id_detail_auswahl = " + detailID.get(i);
+                            "WHERE zutaten_entfernen.id_detail_auswahl = " + integer;
                     ResultSet rs = stmt.executeQuery(query);
                     while (rs.next()) {
                         deleteIngr.add(rs.getString("zutaten.name"));
@@ -557,6 +628,14 @@ public class Main {
             }
         } catch (SQLException ex) {
             throw new Error("Problem", ex);
+        } finally {
+            try {
+                if (conn != null) {
+                    conn.close();
+                }
+            } catch (SQLException e) {
+                System.out.println(e.getMessage());
+            }
         }
         //Lieferzone, Lieferpreis
         //gesamtpreis
@@ -587,6 +666,13 @@ public class Main {
         System.out.println("\t" + amount + "x \t\t\t\t= " + df.format(menuPrice) + "€");
         return menuPrice;
 
+    }
+
+    private static void printCustomerData (String customerName, String address, String ZIP, String location){
+        System.out.println("CUSTOMER DETAILS");
+        System.out.println(customerName);
+        System.out.println(address);
+        System.out.println(ZIP + " " + location);
     }
 
 
