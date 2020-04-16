@@ -463,97 +463,129 @@ public class Main {
                 System.out.println("something went wrong with the customerData");
             }
 //komplette Bestellung
-            int menuNo = 0;
-            String menuName = "";
-            int typeID = 0;
-            String menuType = "";
-            double menuPrice = 0;
-            int detailID = 0;
-            ArrayList<String> extraIngr = new ArrayList<>();
-            ArrayList<Double> extraIngrPrice = new ArrayList<>();
-            ArrayList<String> deleteIngr = new ArrayList<>();
-            ArrayList<Double> deleteIngrPrice = new ArrayList<>();
-            int amount = 0;
+            //Detail-Nummer
+            ArrayList<Integer> detailID = new ArrayList<>();
             double priceInTotal = 0;
-            try { //Detail-Nummer, Menünummer, Menüname, Gruppen_nr., Menüpreis, Menge
-                String query = "SELECT menu_auswahl.id_detail_auswahl, " +
-                        "menu_auswahl.menu_nr, " +
-                        "menu.name, " +
-                        "menu.menu_gruppe, " +
-                        "menu.preis, " +
-                        "menu_auswahl.anzahl " +
+            try {
+                String query = "SELECT menu_auswahl.id_detail_auswahl " +
                         "FROM menu_auswahl " +
-                        "INNER JOIN menu ON menu_auswahl.menu_nr = menu.menu_nr " +
                         "WHERE menu_auswahl.bestell_nr = " + orderNo;
-
                 ResultSet rs = stmt.executeQuery(query);
                 while (rs.next()) {
-                    detailID = rs.getInt("menu_auswahl.id_detail_auswahl");
-                    menuNo = rs.getInt("menu_auswahl.menu_nr");
-                    menuName = rs.getString("menu.name");
-                    typeID = rs.getInt("menu.menu_gruppe");
-                    menuPrice = rs.getDouble("menu.preis");
-                    amount = rs.getInt("menu_auswahl.anzahl");
-//Bestellung (Details: extra Zutaten)
-                    try {
-                        String subQuery = "SELECT zutaten.name, zutaten.preis " +
-                                "FROM zutaten_hinzuf " +
-                                "INNER JOIN zutaten ON zutaten_hinzuf.zutaten_id = zutaten.id " +
-                                "WHERE zutaten_hinzuf.id_detail_auswahl = " + detailID;
-
-                        Statement subStmt = conn.createStatement();
-                        ResultSet subRs = subStmt.executeQuery(subQuery);
-                        while (subRs.next()) {
-                            extraIngr.add(rs.getString("name"));
-                            extraIngrPrice.add(rs.getDouble("preis"));
-                        }
-                    } catch (SQLException ex) {
-                        System.out.println("something went wrong with extra Ingredients");
-                        throw new Error(ex);
-                    }
-//Bestellung (Details: Zutaten weglassen)
-                    try {
-                        String subQuery = "SELECT zutaten.name, zutaten.preis " +
-                                "FROM zutaten_entfernen " +
-                                "INNER JOIN zutaten ON zutaten_entfernen.zutaten_id = zutaten.id " +
-                                "WHERE zutaten_entfernen.id_detail_auswahl = " + detailID;
-
-                        Statement subStmt = conn.createStatement();
-                        ResultSet subRs = subStmt.executeQuery(subQuery);
-                        while (subRs.next()) {
-                            deleteIngr.add(rs.getString("name"));
-                            deleteIngrPrice.add(rs.getDouble("preis"));
-                        }
-                    } catch (SQLException ex) {
-                        System.out.println("something went wrong with the deleted ingredients");
-                    }
-                    try { //Menügruppenname
-                        String subQuery = "SELECT menu_gruppe.name FROM `menu_gruppe` WHERE menu_gruppe.id = " + typeID;
-                        Statement subStmt = conn.createStatement();
-                        ResultSet subRs = subStmt.executeQuery(subQuery);
-                        while (subRs.next()){
-                            menuType = subRs.getString("menu_gruppe.name");
-                        }
-
-                    } catch (SQLException ex){
-                        throw new Error("something went wrong with the menu_type", ex);
-                    }
-                    printMenuII (menuNo, menuName, menuType, menuPrice, extraIngr , extraIngrPrice, deleteIngr, deleteIngrPrice, amount, priceInTotal);
+                    detailID.add(rs.getInt("menu_auswahl.id_detail_auswahl"));
                 }
             } catch (SQLException ex) {
-                throw new Error("something went wrong with the ordered menu", ex);
+                throw new Error("something went wrong with you id_ArrayList", ex);
             }
+            for (int i = 0; i < detailID.size(); i++) {
+                //Menünummer, Menüname, Gruppen_nr., Menüpreis, Menge
+                int menuNo = 0;
+                String menuName = "";
+                int typeID = 0;
+                double menuPrice = 0;
+                int amount = 0;
+                try {
+                    String query = "SELECT menu_auswahl.menu_nr, " +
+                            "menu.name, " +
+                            "menu.menu_gruppe, " +
+                            "menu.preis, " +
+                            "menu_auswahl.anzahl " +
+                            "FROM menu_auswahl " +
+                            "INNER JOIN menu ON menu_auswahl.menu_nr = menu.menu_nr " +
+                            "WHERE menu_auswahl.id_detail_auswahl = " + detailID.get(i);
 
+                    ResultSet rs = stmt.executeQuery(query);
+                    while (rs.next()) {
+                        menuNo = rs.getInt("menu_auswahl.menu_nr");
+                        menuName = rs.getString("menu.name");
+                        typeID = rs.getInt("menu.menu_gruppe");
+                        menuPrice = rs.getDouble("menu.preis");
+                        amount = rs.getInt("menu_auswahl.anzahl");
+                    }
+                } catch (SQLException ex) {
+                    throw new Error("something went wrong with the ordered menu", ex);
+                }
+                //Details:
+                ArrayList<String> extraIngr = new ArrayList<>();
+                ArrayList<Double> extraIngrPrice = new ArrayList<>();
+                ArrayList<String> deleteIngr = new ArrayList<>();
+                ArrayList<Double> deleteIngrPrice = new ArrayList<>();
+
+                try {//Details: extra Zutaten
+                    String query = "SELECT zutaten.name AS 'Zutat', zutaten.preis AS 'Preis' " +
+                            "FROM zutaten_hinzuf " +
+                            "INNER JOIN zutaten ON zutaten_hinzuf.zutaten_id = zutaten.id " +
+                            "WHERE zutaten_hinzuf.id_detail_auswahl = " + detailID.get(i);
+                    ResultSet rs = stmt.executeQuery(query);
+                    while (rs.next()) {
+                        extraIngr.add(rs.getString("Zutat"));
+                        extraIngrPrice.add(rs.getDouble("Preis"));
+                    }
+                } catch (SQLException ex) {
+                    System.out.println("something went wrong with extra Ingredients");
+                    throw new Error(ex);
+                }
+
+                try {//Details: Zutaten weglassen
+                    String query = "SELECT zutaten.name, zutaten.preis " +
+                            "FROM zutaten_entfernen " +
+                            "INNER JOIN zutaten ON zutaten_entfernen.zutaten_id = zutaten.id " +
+                            "WHERE zutaten_entfernen.id_detail_auswahl = " + detailID.get(i);
+                    ResultSet rs = stmt.executeQuery(query);
+                    while (rs.next()) {
+                        deleteIngr.add(rs.getString("zutaten.name"));
+                        deleteIngrPrice.add(rs.getDouble("zutaten.preis"));
+                    }
+                } catch (SQLException ex) {
+                    System.out.println("something went wrong with the deleted ingredients");
+                }
+
+                //Menügruppenname
+                String menuType = "";
+                try {
+                    String query = "SELECT menu_gruppe.name FROM `menu_gruppe` WHERE menu_gruppe.id = " + typeID;
+                    ResultSet rs = stmt.executeQuery(query);
+                    while (rs.next()) {
+                        menuType = rs.getString("menu_gruppe.name");
+                    }
+
+                } catch (SQLException ex) {
+                    throw new Error("something went wrong with the menu_type", ex);
+                }
+                priceInTotal = priceInTotal + printMenuII(menuNo, menuName, menuType, menuPrice, extraIngr,
+                        extraIngrPrice, deleteIngr, deleteIngrPrice, amount);
+            }
         } catch (SQLException ex) {
             throw new Error("Problem", ex);
         }
         //Lieferzone, Lieferpreis
         //gesamtpreis
     }
-    private static void printMenuII (int menuNo, String menuName, String menuType, double menuPrice,
+
+    private static double printMenuII (int menuNo, String menuName, String menuType, double menuPrice,
                                      ArrayList<String> extraIngr , ArrayList<Double> extraIngrPrice,
                                      ArrayList<String> deleteIngr, ArrayList<Double> deleteIngrPrice,
-                                     int amount, double priceInTotal){
+                                     int amount) {
+        System.out.println("MENU  NO. " + menuNo);
+        System.out.println("\t" + menuName + " (" + menuType + ")\t" + df.format(menuPrice) + "€");
+        if(extraIngr.size()>0) {
+            System.out.println("\twith extra:");
+            for (int i = 0; i < extraIngr.size(); i++) {
+                System.out.println("\t\t" + extraIngr.get(i) + " + " + df.format(extraIngrPrice.get(i)) + "€");
+                menuPrice = menuPrice + extraIngrPrice.get(i);
+            }
+        }
+        if (deleteIngr.size()>0) {
+            System.out.println("\twithout:");
+            for (int i = 0; i < deleteIngr.size(); i++) {
+                System.out.println("\t\t" + deleteIngr.get(i) + " - " + df.format(deleteIngrPrice.get(i)) + "€");
+                menuPrice = menuPrice - deleteIngrPrice.get(i);
+            }
+        }
+        menuPrice = menuPrice * amount;
+        System.out.println("\t_____________________");
+        System.out.println("\t" + amount + "x \t\t\t\t= " + df.format(menuPrice) + "€");
+        return menuPrice;
 
     }
 
