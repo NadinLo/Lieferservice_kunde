@@ -405,7 +405,7 @@ public class Main {
                         "VALUES (" + orderNo + ", '" + name + "', '" + address + "', " + locationID + ")";
                 stmt = conn.createStatement();
                 stmt.executeUpdate(command);
-                calculateDeliveryArea(orderNo);
+                //calculateDeliveryArea(orderNo);
             } else {
                 System.out.println("We don't deliver to this area. Sorry.");
             }
@@ -423,7 +423,7 @@ public class Main {
         }
     }
 
-    private static void calculateDeliveryArea(int orderNo) {
+    private static double calculateDeliveryArea(int orderNo) {
         Connection conn = null;
         double deliveryFee = 0;
         int deliveryArea = 0;
@@ -463,9 +463,11 @@ public class Main {
                 System.out.println(e.getMessage());
             }
         }
+        return deliveryFee;
     }
 
     private static void overview(int orderNo) {
+        double priceInTotal = 0;
         System.out.println("YOUR ORDER\t\t\t" + orderNo);
         Connection conn = null;
         try {
@@ -500,7 +502,6 @@ public class Main {
 //komplette Bestellung
             //Detail-Nummer
             ArrayList<Integer> detailID = new ArrayList<>();
-            double priceInTotal = 0;
             try {
                 String query = "SELECT menu_auswahl.id_detail_auswahl " +
                         "FROM menu_auswahl " +
@@ -602,8 +603,10 @@ public class Main {
                 System.out.println(e.getMessage());
             }
         }
-        //todo: Lieferzone, Lieferpreis
-        //todo: gesamtpreis
+        //Lieferzone, Lieferpreis
+        priceInTotal = priceInTotal + calculateDeliveryArea(orderNo);
+        //gesamtpreis
+        System.out.println("=== To pay: " + df.format(priceInTotal) + "€ ===");
     }
 
     private static double printMenuII (int menuNo, String menuName, String menuType, double menuPrice,
